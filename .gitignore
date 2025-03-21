@@ -121,3 +121,8 @@ work_dirs/
 *.pth
 *.py~
 *.sh~
+
+
+# Wayne's HPC
+~/nltk_data/
+vis_anom_finetune_log_dir/

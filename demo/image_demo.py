@@ -63,6 +63,8 @@ from mmengine.logging import print_log
 from mmdet.apis import DetInferencer
 from mmdet.evaluation import get_classes
 
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 def parse_args():
     parser = ArgumentParser()

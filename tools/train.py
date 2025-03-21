@@ -9,6 +9,9 @@ from mmengine.runner import Runner
 
 from mmdet.utils import setup_cache_size_limit_of_dynamo
 
+# enable no ssl verification needed
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a detector')
