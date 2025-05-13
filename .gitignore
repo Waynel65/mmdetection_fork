@@ -126,3 +126,4 @@ work_dirs/
 # Wayne's HPC
 ~/nltk_data/
 vis_anom_finetune_log_dir/
+vis_anom_eval_work_dir/

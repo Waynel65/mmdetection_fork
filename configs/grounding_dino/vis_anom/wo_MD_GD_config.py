@@ -1,8 +1,7 @@
-_base_ = 'grounding_dino_swin-t_finetune_16xb2_1x_coco.py'
+_base_ = '../grounding_dino_swin-t_finetune_16xb2_1x_coco.py'
 
-data_root = 'data/MarchDataset_organized/'
+data_root = 'data/MarchDataset_wo_MD_GD/'
 class_name = (
-    "membrane_discoloration",
     "membrane_shrinkage",
     "membrane_blistering",
     "ponding_water",
@@ -13,7 +12,6 @@ class_name = (
     "roof_penetration",
     "spalling",
     "water_intrusion",
-    "general_deterioration",
     "debris",
     "peeling_paint",
     "crack",
@@ -24,7 +22,6 @@ class_name = (
 )
 num_classes = len(class_name)
 COLORS = [
-    (0, 0, 255),        # Bright Red (General Deterioration)
     (0, 128, 128),      # Changed to a more Teal Green (Debris)
     (255, 100, 0),      # Brighter Blue (Peeling Paint)
     (0, 165, 255),      # Orange (Crack)
@@ -35,7 +32,6 @@ COLORS = [
     (50, 255, 0),       # Brighter Lime Green (Below Membrane Moisture)
     (205, 0, 0),        # Deep Blue (Membrane Shrinkage)
     (128, 0, 0),        # Changed to Maroon (Membrane Blistering)
-    (255, 0, 255),      # Vivid Purple (Spalling)
     (80, 127, 255),     # Changed to Silver (Seam Debonding)
     (147, 20, 255),     # Deep Pink (Poor Seam Integrity)
     (124, 252, 0),      # Lawn Green (Water Intrusion)
@@ -45,6 +41,9 @@ COLORS = [
     (238, 130, 238),    # Medium Violet
     (85, 107, 47)       # Dark Olive Green
 ]
+
+
+
 metainfo = dict(classes=class_name, palette=COLORS)
 
 model = dict(bbox_head=dict(num_classes=num_classes))
@@ -75,19 +74,32 @@ default_hooks = dict(
     logger=dict(type='LoggerHook', interval=5))
 train_cfg = dict(max_epochs=max_epoch, val_interval=1)
 
+
+# param_scheduler = [
+#     dict(type='LinearLR', start_factor=0.001, by_epoch=False, begin=0, end=30),
+#     dict(
+#         type='MultiStepLR',
+#         begin=0,
+#         end=max_epoch,
+#         by_epoch=True,
+#         milestones=[50],
+#         gamma=0.1)
+# ]
+
+# https://mmengine.readthedocs.io/en/latest/tutorials/param_scheduler.html
 param_scheduler = [
-    dict(type='LinearLR', start_factor=0.001, by_epoch=False, begin=0, end=30),
     dict(
-        type='MultiStepLR',
-        begin=0,
-        end=max_epoch,
-        by_epoch=True,
-        milestones=[50],
-        gamma=0.1)
+        type='CosineAnnealingLR', 
+        by_epoch=True, 
+        T_max=max_epoch, 
+        eta_min=1e-6, 
+        # convert_to_iter_based=True
+    )
 ]
 
+
 optim_wrapper = dict(
-    optimizer=dict(lr=0.00005),
+    optimizer=dict(lr=1e-5),
     paramwise_cfg=dict(
         custom_keys={
             'absolute_pos_embed': dict(decay_mult=0.),
@@ -96,3 +108,47 @@ optim_wrapper = dict(
         }))
 
 auto_scale_lr = dict(base_batch_size=16)
+
+
+## Weights and Biases Setup
+vis_backends = [
+    dict(
+        type='WandbVisBackend',
+        init_kwargs={
+            'project': 'vis_anom_grounding_dino',
+            'entity': 'ai4ce'
+        }
+    )
+]
+visualizer = dict(
+    type='DetLocalVisualizer',
+    vis_backends=vis_backends,
+    name='visualizer'
+)
+
+log_config = dict(
+    interval=10,
+    hooks=[
+        dict(type='TextLoggerHook'),
+        dict(
+            type='WandbLoggerHook',
+            init_kwargs={
+                'project': 'vis_anom_grounding_dino',
+                'entity': 'ai4ce'
+            }
+        )
+    ]
+)
+
+
+### Visualization
+visualization = dict(
+    type='DetVisualizationHook',
+    draw=True,         # Enable drawing of predictions
+    interval=1,        # Frequency of visualization (e.g., every epoch)
+    show=False         # Set to False to log images to W&B instead of displaying them
+)
+
+# checkpoint config 
+# evaluation config
+
